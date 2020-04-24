@@ -27,9 +27,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # texture_features = torch.randn(1, 16, 512, 512, requires_grad=True)
-    from torch.autograd import Variable
-    texture_features = Variable(torch.randn(1, 16, 512, 512), requires_grad=True)
     class Net(nn.Module):
         def __init__(self):
             super(Net, self).__init__()
@@ -85,6 +82,9 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("Code is running on " + str(device))
+    texture_features = torch.randn(1, 16, 512, 512, requires_grad=True, device=device)
+    # from torch.autograd import Variable
+    # texture_features = Variable(torch.randn(1, 16, 512, 512), requires_grad=True, device=device)
     renderer = Renderer(use_shading=False, device=device)
     model = Net()
     model = model.to(device)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # all_params = [texture_features, model.parameters()]
     all_params = list(texture_features) + list(model.parameters())
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
-    optimizer.add_param_group({'params': texture_features.to(device)})
+    optimizer.add_param_group({'params': texture_features})
     criterion = nn.L1Loss()
 
     for i in range(args.epochs):
@@ -118,6 +118,9 @@ if __name__ == '__main__':
             loss = criterion(target, source)
             print("Loss for entry " + str(j) + ": " + str(loss))
             loss.backward()
+
+            print("texture_features")
+            print(texture_features)
 
             if j == len(loader) - 2:
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
