@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # all_params = [texture_features, model.parameters()]
     all_params = list(texture_features) + list(model.parameters())
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
-    optimizer.add_param_group({'params': texture_features})
+    optimizer.add_param_group({'params': texture_features.to(device)})
     criterion = nn.L1Loss()
 
     for i in range(args.epochs):
@@ -118,8 +118,6 @@ if __name__ == '__main__':
             loss = criterion(target, source)
             print("Loss for entry " + str(j) + ": " + str(loss))
             loss.backward()
-            print("texture_features")
-            print(texture_features)
 
             if j == len(loader) - 2:
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
