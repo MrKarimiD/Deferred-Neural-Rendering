@@ -22,8 +22,9 @@ if __name__ == '__main__':
                         default='C:/Users/Mohammad Reza/Desktop/test_var',
                         help="output folder")
 
-    parser.add_argument('--epochs', type=int, default=1000, help="number of epochs per training")
-    parser.add_argument('--checkpoints', type=int, default=20, help="number of epochs per checkpoints")
+    parser.add_argument('--epochs', type=int, default=2000, help="number of epochs per training")
+    parser.add_argument('--checkpoints', type=int, default=100, help="number of epochs per checkpoints")
+    parser.add_argument('--useGPU', action='store_true')
 
     args = parser.parse_args()
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 
             return x
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() and args.useGPU else 'cpu')
     print("Code is running on " + str(device))
     texture_features = torch.randn(1, 16, 512, 512, requires_grad=True, device=device)
     # from torch.autograd import Variable
@@ -95,9 +96,6 @@ if __name__ == '__main__':
     loader = FrameBufferLoader(path=args.trainset)
     testloader = FrameBufferLoader(path=args.testset)
     print("Loading data is done!")
-    # optimizer = torch.optim.Adam(params=[source_texture], lr=0.1)
-    # all_params = [texture_features, model.parameters()]
-    all_params = list(texture_features) + list(model.parameters())
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
     optimizer.add_param_group({'params': texture_features})
     criterion = nn.L1Loss()
@@ -118,9 +116,6 @@ if __name__ == '__main__':
             loss = criterion(target, source)
             print("Loss for entry " + str(j) + ": " + str(loss))
             loss.backward()
-
-            print("texture_features")
-            print(texture_features)
 
             if j == len(loader) - 2:
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
