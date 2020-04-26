@@ -128,7 +128,6 @@ if __name__ == '__main__':
             render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
             render_1 = renderer(texture_features1, fb)
             render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
-
             render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
             source = model(render)
             target = fb.image  # renderer(target_texture, fb)
@@ -139,7 +138,14 @@ if __name__ == '__main__':
 
             if j == len(loader) - 2:
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
-                test_render = renderer(texture_features, fb)
+                render_4 = renderer(texture_features4, fb)
+                render_3 = renderer(texture_features3, fb)
+                render_3_upsampled = F.interpolate(render_3, size=(512, 512), mode='bilinear')
+                render_2 = renderer(texture_features2, fb)
+                render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
+                render_1 = renderer(texture_features1, fb)
+                render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
+                test_render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
                 test_source = model(test_render)
                 test_target = fb.image
                 print("Saving the output pf epoch " + str(i))
