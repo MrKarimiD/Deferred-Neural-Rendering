@@ -123,15 +123,16 @@ if __name__ == '__main__':
                 test_source = model(test_render)
                 test_target = fb.image
                 print("Saving the output pf epoch " + str(i))
-                save_image(test_source, f"{args.output}/render_{i:4d}.png")
-                save_image(test_target, f"{args.output}/target_{i:4d}.png")
+                save_image(test_source, f"{args.output}/render_{i:04}.png")
+                save_image(test_target, f"{args.output}/target_{i:04}.png")
 
                 if i % args.checkpoints == 0:
                     print("Saving network data")
+                    torch.save(texture_features, f"{args.output}/texture_epoch_{i:04}.pt")
                     torch.save({
                         'epoch': i,
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
-                        'loss': loss}, f"{args.output}/model_epoch_{i:4d}.pt")
+                        'loss': loss}, f"{args.output}/model_epoch_{i:04}.pt")
 
             optimizer.step()
