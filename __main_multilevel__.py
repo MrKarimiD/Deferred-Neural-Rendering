@@ -112,7 +112,7 @@ if __name__ == '__main__':
     optimizer.add_param_group({'params': texture_features4})
     criterion = nn.L1Loss()
 
-    for i in range(args.epochs):
+    for i in range(args.epochs + 1):
         print("Epoch " + str(i))
         for j, fb in enumerate(loader):
 
@@ -123,11 +123,11 @@ if __name__ == '__main__':
 
             render_4 = renderer(texture_features4, fb)
             render_3 = renderer(texture_features3, fb)
-            render_3_upsampled = F.interpolate(render_3, size=(1024, 512), mode='bilinear')
+            render_3_upsampled = F.interpolate(render_3, size=(512, 1024), mode='bilinear')
             render_2 = renderer(texture_features2, fb)
-            render_2_upsampled = F.interpolate(render_2, size=(1024, 512), mode='bilinear')
+            render_2_upsampled = F.interpolate(render_2, size=(512, 1024), mode='bilinear')
             render_1 = renderer(texture_features1, fb)
-            render_1_upsampled = F.interpolate(render_1, size=(1024, 512), mode='bilinear')
+            render_1_upsampled = F.interpolate(render_1, size=(512, 1024), mode='bilinear')
             render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
             source = model(render)
             target = fb.image  # renderer(target_texture, fb)
@@ -140,11 +140,11 @@ if __name__ == '__main__':
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
                 render_4 = renderer(texture_features4, fb)
                 render_3 = renderer(texture_features3, fb)
-                render_3_upsampled = F.interpolate(render_3, size=(1024, 512), mode='bilinear')
+                render_3_upsampled = F.interpolate(render_3, size=(512, 1024), mode='bilinear')
                 render_2 = renderer(texture_features2, fb)
-                render_2_upsampled = F.interpolate(render_2, size=(1024, 512), mode='bilinear')
+                render_2_upsampled = F.interpolate(render_2, size=(512, 1024), mode='bilinear')
                 render_1 = renderer(texture_features1, fb)
-                render_1_upsampled = F.interpolate(render_1, size=(1024, 512), mode='bilinear')
+                render_1_upsampled = F.interpolate(render_1, size=(512, 1024), mode='bilinear')
                 test_render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
                 test_source = model(test_render)
                 test_target = fb.image

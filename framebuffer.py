@@ -55,8 +55,8 @@ class FrameBufferLoader(torch.utils.data.Dataset):
 def open_16bit_tif(path: str) -> torch.Tensor:
     with open(path, 'rb') as file:
         data = imread(file)
-        h = data.shape[0]
-        w = data.shape[1]
+        h = data.shape[1]
+        w = data.shape[0]
 
         # assert info['bitdepth'] == 16
         # assert info['planes'] == 3
