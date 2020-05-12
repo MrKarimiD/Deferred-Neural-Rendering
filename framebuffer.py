@@ -45,9 +45,35 @@ class FrameBufferLoader(torch.utils.data.Dataset):
         i += 1 # Blender counts from 1
         # buffers = { subdir:open_16bit_png(f"{self.path}/{subdir}/{subdir}_{i:04}.png")
         #                 for subdir in self.subdirs }
-        buffers = {subdir: open_16bit_png(f"{self.path}/{subdir}/{subdir}{i:04}.png")
+        # buffers = {subdir: open_16bit_png(f"{self.path}/{subdir}/{subdir}{i:04}.png")
+        #            for subdir in self.subdirs}
+        buffers = {subdir: open_16bit_tif(f"{self.path}/{subdir}/{subdir}{i:04}.tif")
                    for subdir in self.subdirs}
         return FrameBuffer(**buffers)
+
+
+def open_16bit_tif(path: str) -> torch.Tensor:
+    with open(path, 'rb') as file:
+        data = imread(file)
+        h = data.shape[0]
+        w = data.shape[1]
+
+        # assert info['bitdepth'] == 16
+        # assert info['planes'] == 3
+        # assert info['alpha'] == False
+        # assert info['greyscale'] == False
+
+        image = np.vstack(list(map(np.uint16, data)))  # TODO this is slow
+        image = image.reshape((w, h, 3))
+        image = torch.tensor(image.astype(np.float64) / 2 ** 16).to(dtype=torch.float32)
+
+        # * Note that the alpha in the blue channel of the uvs
+        assert len(image.shape) == 3
+        assert image.min() >= 0.0
+        assert image.max() <= 1.0
+        # assert image.shape[0] == image.shape[1]
+
+        return image
 
 
 def open_16bit_png(path: str) -> torch.Tensor:

@@ -9,6 +9,7 @@ from typing import Optional
 from torchvision import transforms
 import torch.nn.functional as F
 from torchvision.utils import save_image
+from tifffile import imread
 
 from PIL import Image
 import png 

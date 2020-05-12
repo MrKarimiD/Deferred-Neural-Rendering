@@ -15,16 +15,28 @@ if __name__ == '__main__':
                         help="Test set address")
 
     parser.add_argument('--output',
-                        default='C:/Users/Mohammad Reza/Desktop/test_var',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/test_weired',
                         help="output folder")
 
     parser.add_argument('--model',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/final_vase/model_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/model_epoch_1900.pt',
                         help="Model checkpoint")
 
-    parser.add_argument('--texture',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/final_vase/texture_epoch_1900.pt',
-                        help="Model checkpoint")
+    parser.add_argument('--texture1',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l1_epoch_1900.pt',
+                        help="Texture Level 1 Address")
+
+    parser.add_argument('--texture2',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l2_epoch_1900.pt',
+                        help="Texture Level 2 Address")
+
+    parser.add_argument('--texture3',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l3_epoch_1900.pt',
+                        help="Texture Level 3 Address")
+
+    parser.add_argument('--texture4',
+                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l4_epoch_1900.pt',
+                        help="Texture Level 4 Address")
 
     args = parser.parse_args()
 
@@ -81,9 +93,12 @@ if __name__ == '__main__':
 
             return x
 
-    device = torch.device('cuda' if torch.cuda.is_available() and args.useGPU else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("Code is running on " + str(device))
-    texture_features = torch.load(args.texture, map_location=device)  #randn(1, 16, 512, 512, requires_grad=True, device=device)
+    texture_features1 = torch.load(args.texture1, map_location=device)  #randn(1, 16, 512, 512, requires_grad=True, device=device)
+    texture_features2 = torch.load(args.texture2, map_location=device)
+    texture_features3 = torch.load(args.texture3, map_location=device)
+    texture_features4 = torch.load(args.texture4, map_location=device)
     # from torch.autograd import Variable
     # texture_features = Variable(torch.randn(1, 16, 512, 512), requires_grad=True, device=device)
     renderer = Renderer(use_shading=False, device=device)
@@ -91,7 +106,6 @@ if __name__ == '__main__':
     model = model.to(device)
     checkpoint = torch.load(args.model, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
-    texture_features = texture_features.to(device)
     # # check keras-like model summary using torchsummary
     # from torchsummary import summary
     # summary(model, texture_features.shape)
@@ -103,8 +117,15 @@ if __name__ == '__main__':
         if j >= len(testloader) - 1:
             break
 
-        render = renderer(texture_features, fb)
-        source = model(render)
+        render_4 = renderer(texture_features4, fb)
+        render_3 = renderer(texture_features3, fb)
+        render_3_upsampled = F.interpolate(render_3, size=(512, 512), mode='bilinear')
+        render_2 = renderer(texture_features2, fb)
+        render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
+        render_1 = renderer(texture_features1, fb)
+        render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
+        test_render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
+        source = model(test_render)
         target = fb.image  # renderer(target_texture, fb)
 
         save_image(source, f"{args.output}/render_{j:04}.png")

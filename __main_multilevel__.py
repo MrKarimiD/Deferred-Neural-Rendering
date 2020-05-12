@@ -11,18 +11,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make point cloud from depth images')
 
     parser.add_argument('--trainset',
-                        default='../bake',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_simple/output/train',
                         help="Train set address")
 
     parser.add_argument('--testset',
-                        default='../test_bake',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_simple/output/test',
                         help="Test set address")
 
     parser.add_argument('--output',
-                        default='C:/Users/Mohammad Reza/Desktop/test_var',
+                        default='C:/Users/Mohammad Reza/Desktop/test',
                         help="output folder")
 
-    parser.add_argument('--epochs', type=int, default=2000, help="number of epochs per training")
+    parser.add_argument('--epochs', type=int, default=2, help="number of epochs per training")
     parser.add_argument('--checkpoints', type=int, default=100, help="number of epochs per checkpoints")
     parser.add_argument('--useGPU', action='store_true')
 
@@ -123,11 +123,11 @@ if __name__ == '__main__':
 
             render_4 = renderer(texture_features4, fb)
             render_3 = renderer(texture_features3, fb)
-            render_3_upsampled = F.interpolate(render_3, size=(512, 512), mode='bilinear')
+            render_3_upsampled = F.interpolate(render_3, size=(1024, 512), mode='bilinear')
             render_2 = renderer(texture_features2, fb)
-            render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
+            render_2_upsampled = F.interpolate(render_2, size=(1024, 512), mode='bilinear')
             render_1 = renderer(texture_features1, fb)
-            render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
+            render_1_upsampled = F.interpolate(render_1, size=(1024, 512), mode='bilinear')
             render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
             source = model(render)
             target = fb.image  # renderer(target_texture, fb)
@@ -140,11 +140,11 @@ if __name__ == '__main__':
                 fb = testloader[len(testloader) - 1] #[randint(0, len(testloader)-1)]
                 render_4 = renderer(texture_features4, fb)
                 render_3 = renderer(texture_features3, fb)
-                render_3_upsampled = F.interpolate(render_3, size=(512, 512), mode='bilinear')
+                render_3_upsampled = F.interpolate(render_3, size=(1024, 512), mode='bilinear')
                 render_2 = renderer(texture_features2, fb)
-                render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
+                render_2_upsampled = F.interpolate(render_2, size=(1024, 512), mode='bilinear')
                 render_1 = renderer(texture_features1, fb)
-                render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
+                render_1_upsampled = F.interpolate(render_1, size=(1024, 512), mode='bilinear')
                 test_render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
                 test_source = model(test_render)
                 test_target = fb.image
