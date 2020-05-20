@@ -11,31 +11,31 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make point cloud from depth images')
 
     parser.add_argument('--testset',
-                        default='C:/Users/Mohammad Reza/Desktop/remote/synthetic_ds/vase-obj/vase_bake_test_weired',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room/output/train',
                         help="Test set address")
 
     parser.add_argument('--output',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/test_weired',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/test2',
                         help="output folder")
 
     parser.add_argument('--model',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/model_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/model_epoch_1000.pt',
                         help="Model checkpoint")
 
     parser.add_argument('--texture1',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l1_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l1_epoch_1000.pt',
                         help="Texture Level 1 Address")
 
     parser.add_argument('--texture2',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l2_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l2_epoch_1000.pt',
                         help="Texture Level 2 Address")
 
     parser.add_argument('--texture3',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l3_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l3_epoch_1000.pt',
                         help="Texture Level 3 Address")
 
     parser.add_argument('--texture4',
-                        default='C:/Users/Mohammad Reza/Desktop/outputs/Vase/vase_multi/texture_l4_epoch_1900.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l4_epoch_1000.pt',
                         help="Texture Level 4 Address")
 
     args = parser.parse_args()
@@ -119,11 +119,11 @@ if __name__ == '__main__':
 
         render_4 = renderer(texture_features4, fb)
         render_3 = renderer(texture_features3, fb)
-        render_3_upsampled = F.interpolate(render_3, size=(512, 512), mode='bilinear')
+        render_3_upsampled = F.interpolate(render_3, size=(512, 1024), mode='bilinear')
         render_2 = renderer(texture_features2, fb)
-        render_2_upsampled = F.interpolate(render_2, size=(512, 512), mode='bilinear')
+        render_2_upsampled = F.interpolate(render_2, size=(512, 1024), mode='bilinear')
         render_1 = renderer(texture_features1, fb)
-        render_1_upsampled = F.interpolate(render_1, size=(512, 512), mode='bilinear')
+        render_1_upsampled = F.interpolate(render_1, size=(512, 1024), mode='bilinear')
         test_render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
         source = model(test_render)
         target = fb.image  # renderer(target_texture, fb)
