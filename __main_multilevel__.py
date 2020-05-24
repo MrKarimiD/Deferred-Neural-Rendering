@@ -31,35 +31,44 @@ if __name__ == '__main__':
     class Net(nn.Module):
         def __init__(self):
             super(Net, self).__init__()
-            self.conv1 = nn.Conv2d(16, 64, kernel_size=4, stride=2)
+            self.conv1 = nn.Conv2d(16, 64, kernel_size=4, stride=2, padding=1)
             self.conv1_in = nn.InstanceNorm2d(64)
 
-            self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2)
+            self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
             self.conv2_in = nn.InstanceNorm2d(128)
 
-            self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2)
+            self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
             self.conv3_in = nn.InstanceNorm2d(256)
 
-            self.conv4 = nn.Conv2d(256, 512, kernel_size=4, stride=2)
+            self.conv4 = nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1)
             self.conv4_in = nn.InstanceNorm2d(512)
 
-            self.conv5 = nn.Conv2d(512, 512, kernel_size=4, stride=2)
+            self.conv5 = nn.Conv2d(512, 512, kernel_size=4, stride=2, padding=1)
             self.conv5_in = nn.InstanceNorm2d(512)
 
-            self.deconv1 = nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2)
+            self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.deconv1 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+            # self.deconv1 = nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2)
             self.deconv1_in = nn.InstanceNorm2d(512)
 
-            self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2)
+            self.up2 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv2 = nn.Conv2d(1024, 512, kernel_size=3, padding=1)
+            # self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2)
             self.deconv2_in = nn.InstanceNorm2d(512)
 
-            self.deconv3 = nn.ConvTranspose2d(768, 256, kernel_size=4, stride=2)
+            self.up3 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv3 = nn.Conv2d(768, 256, kernel_size=3, padding=1)
+            # self.deconv3 = nn.ConvTranspose2d(768, 256, kernel_size=4, stride=2)
             self.deconv3_in = nn.InstanceNorm2d(256)
 
-            self.deconv4 = nn.ConvTranspose2d(384, 128, kernel_size=4, stride=2, output_padding=1)
+            self.up4 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv4 = nn.Conv2d(384, 128, kernel_size=3, padding=1)
+            # self.deconv4 = nn.ConvTranspose2d(384, 128, kernel_size=4, stride=2, output_padding=1)
             self.deconv4_in = nn.InstanceNorm2d(128)
 
-            self.deconv5 = nn.ConvTranspose2d(192, 3, kernel_size=4, stride=2)
-            self.deconv5_in = nn.InstanceNorm2d(3)
+            self.up5 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv5 = nn.Conv2d(192, 3, kernel_size=3, padding=1)
+            # self.deconv5 = nn.ConvTranspose2d(192, 3, kernel_size=4, stride=2)
 
         def forward(self, x):
             # Encoder
@@ -72,12 +81,13 @@ if __name__ == '__main__':
             x = F.leaky_relu(self.conv4_in(self.conv4(x)), negative_slope=0.2)
             residual4 = x
             x = F.leaky_relu(self.conv5_in(self.conv5(x)), negative_slope=0.2)
+
             # Decoder
-            x = F.leaky_relu(self.deconv1_in(self.deconv1(x)), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv2_in(self.deconv2(torch.cat([x, residual4], dim=1))), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv3_in(self.deconv3(torch.cat([x, residual3], dim=1))), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv4_in(self.deconv4(torch.cat([x, residual2], dim=1))), negative_slope=0.2)
-            x = F.tanh(self.deconv5_in(self.deconv5(torch.cat([x, residual1], dim=1))))
+            x = F.leaky_relu(self.deconv1_in(self.deconv1(self.up1(x))), negative_slope=0.2)
+            x = F.leaky_relu(self.deconv2_in(self.deconv2(self.up2(torch.cat([x, residual4], dim=1)))), negative_slope=0.2)
+            x = F.leaky_relu(self.deconv3_in(self.deconv3(self.up3(torch.cat([x, residual3], dim=1)))), negative_slope=0.2)
+            x = F.leaky_relu(self.deconv4_in(self.deconv4(self.up4(torch.cat([x, residual2], dim=1)))), negative_slope=0.2)
+            x = F.tanh(self.deconv5(self.up5(torch.cat([x, residual1], dim=1))))
 
             return x
 
@@ -96,9 +106,9 @@ if __name__ == '__main__':
     texture_features2 = texture_features2.to(device)
     texture_features3 = texture_features3.to(device)
     texture_features4 = texture_features4.to(device)
-    # # check keras-like model summary using torchsummary
-    # from torchsummary import summary
-    # summary(model, texture_features.shape)
+    # check keras-like model summary using torchsummary
+    from torchsummary import summary
+    summary(model,  (16, 512, 1024))
     loader = FrameBufferLoader(path=args.trainset)
     testloader = FrameBufferLoader(path=args.testset)
     print("Loading data is done!")
