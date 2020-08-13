@@ -11,19 +11,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make point cloud from depth images')
 
     parser.add_argument('--trainset',
-                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_simple/output/train',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_average/output/train',
                         help="Train set address")
 
     parser.add_argument('--testset',
-                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_simple/output/test',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_average/output/test',
                         help="Test set address")
 
     parser.add_argument('--output',
-                        default='C:/Users/Mohammad Reza/Desktop/test',
+                        default='C:/Users/Mohammad Reza/Desktop/test_sure',
                         help="output folder")
 
-    parser.add_argument('--epochs', type=int, default=2, help="number of epochs per training")
-    parser.add_argument('--checkpoints', type=int, default=100, help="number of epochs per checkpoints")
+    parser.add_argument('--epochs', type=int, default=5, help="number of epochs per training")
+    parser.add_argument('--checkpoints', type=int, default=1, help="number of epochs per checkpoints")
     parser.add_argument('--useGPU', action='store_true')
 
     args = parser.parse_args()
@@ -140,9 +140,10 @@ if __name__ == '__main__':
             render_1_upsampled = F.interpolate(render_1, size=(512, 1024), mode='bilinear')
             render = render_1_upsampled + render_2_upsampled + render_3_upsampled + render_4
             source = model(render)
+            mask = fb.mask.to(device)
             target = fb.image  # renderer(target_texture, fb)
             target = target.to(device)
-            loss = criterion(target, source) + 0.005 * torch.norm(texture_features4, 2) + 0.002 * torch.norm(texture_features3, 2) + 0.001 * torch.norm(texture_features2, 2) + torch.norm(texture_features1, 2)
+            loss = criterion(mask * target, mask * source) + 0.005 * torch.norm(texture_features4, 2) + 0.002 * torch.norm(texture_features3, 2) + 0.001 * torch.norm(texture_features2, 2) + torch.norm(texture_features1, 2)
             print("Loss for entry " + str(j) + ": " + str(loss))
             loss.backward()
 
