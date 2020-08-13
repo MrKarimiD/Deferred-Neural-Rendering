@@ -11,67 +11,77 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make point cloud from depth images')
 
     parser.add_argument('--testset',
-                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room/output/train',
+                        default='C:/Users/Mohammad Reza/Desktop/remote/Neural Renderer/synthetic_ds/room_average/output/test',
                         help="Test set address")
 
     parser.add_argument('--output',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/test2',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/outputs',
                         help="output folder")
 
     parser.add_argument('--model',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/model_epoch_1000.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/model_epoch_1350.pt',
                         help="Model checkpoint")
 
     parser.add_argument('--texture1',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l1_epoch_1000.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/texture_l1_epoch_1350.pt',
                         help="Texture Level 1 Address")
 
     parser.add_argument('--texture2',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l2_epoch_1000.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/texture_l2_epoch_1350.pt',
                         help="Texture Level 2 Address")
 
     parser.add_argument('--texture3',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l3_epoch_1000.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/texture_l3_epoch_1350.pt',
                         help="Texture Level 3 Address")
 
     parser.add_argument('--texture4',
-                        default='C:/Users/Mohammad Reza/Desktop/room_results/texture_l4_epoch_1000.pt',
+                        default='C:/Users/Mohammad Reza/Desktop/model_1350/texture_l4_epoch_1350.pt',
                         help="Texture Level 4 Address")
 
     args = parser.parse_args()
 
+
     class Net(nn.Module):
         def __init__(self):
             super(Net, self).__init__()
-            self.conv1 = nn.Conv2d(16, 64, kernel_size=4, stride=2)
+            self.conv1 = nn.Conv2d(16, 64, kernel_size=4, stride=2, padding=1)
             self.conv1_in = nn.InstanceNorm2d(64)
 
-            self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2)
+            self.conv2 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
             self.conv2_in = nn.InstanceNorm2d(128)
 
-            self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2)
+            self.conv3 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1)
             self.conv3_in = nn.InstanceNorm2d(256)
 
-            self.conv4 = nn.Conv2d(256, 512, kernel_size=4, stride=2)
+            self.conv4 = nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1)
             self.conv4_in = nn.InstanceNorm2d(512)
 
-            self.conv5 = nn.Conv2d(512, 512, kernel_size=4, stride=2)
+            self.conv5 = nn.Conv2d(512, 512, kernel_size=4, stride=2, padding=1)
             self.conv5_in = nn.InstanceNorm2d(512)
 
-            self.deconv1 = nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2)
+            self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.deconv1 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+            # self.deconv1 = nn.ConvTranspose2d(512, 512, kernel_size=4, stride=2)
             self.deconv1_in = nn.InstanceNorm2d(512)
 
-            self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2)
+            self.up2 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv2 = nn.Conv2d(1024, 512, kernel_size=3, padding=1)
+            # self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2)
             self.deconv2_in = nn.InstanceNorm2d(512)
 
-            self.deconv3 = nn.ConvTranspose2d(768, 256, kernel_size=4, stride=2)
+            self.up3 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv3 = nn.Conv2d(768, 256, kernel_size=3, padding=1)
+            # self.deconv3 = nn.ConvTranspose2d(768, 256, kernel_size=4, stride=2)
             self.deconv3_in = nn.InstanceNorm2d(256)
 
-            self.deconv4 = nn.ConvTranspose2d(384, 128, kernel_size=4, stride=2, output_padding=1)
+            self.up4 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv4 = nn.Conv2d(384, 128, kernel_size=3, padding=1)
+            # self.deconv4 = nn.ConvTranspose2d(384, 128, kernel_size=4, stride=2, output_padding=1)
             self.deconv4_in = nn.InstanceNorm2d(128)
 
-            self.deconv5 = nn.ConvTranspose2d(192, 3, kernel_size=4, stride=2)
-            self.deconv5_in = nn.InstanceNorm2d(3)
+            self.up5 = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.deconv5 = nn.Conv2d(192, 3, kernel_size=3, padding=1)
+            # self.deconv5 = nn.ConvTranspose2d(192, 3, kernel_size=4, stride=2)
 
         def forward(self, x):
             # Encoder
@@ -84,12 +94,16 @@ if __name__ == '__main__':
             x = F.leaky_relu(self.conv4_in(self.conv4(x)), negative_slope=0.2)
             residual4 = x
             x = F.leaky_relu(self.conv5_in(self.conv5(x)), negative_slope=0.2)
+
             # Decoder
-            x = F.leaky_relu(self.deconv1_in(self.deconv1(x)), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv2_in(self.deconv2(torch.cat([x, residual4], dim=1))), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv3_in(self.deconv3(torch.cat([x, residual3], dim=1))), negative_slope=0.2)
-            x = F.leaky_relu(self.deconv4_in(self.deconv4(torch.cat([x, residual2], dim=1))), negative_slope=0.2)
-            x = F.tanh(self.deconv5_in(self.deconv5(torch.cat([x, residual1], dim=1))))
+            x = F.leaky_relu(self.deconv1_in(self.deconv1(self.up1(x))), negative_slope=0.2)
+            x = F.leaky_relu(self.deconv2_in(self.deconv2(self.up2(torch.cat([x, residual4], dim=1)))),
+                             negative_slope=0.2)
+            x = F.leaky_relu(self.deconv3_in(self.deconv3(self.up3(torch.cat([x, residual3], dim=1)))),
+                             negative_slope=0.2)
+            x = F.leaky_relu(self.deconv4_in(self.deconv4(self.up4(torch.cat([x, residual2], dim=1)))),
+                             negative_slope=0.2)
+            x = F.tanh(self.deconv5(self.up5(torch.cat([x, residual1], dim=1))))
 
             return x
 
