@@ -9,31 +9,35 @@ class FrameBuffer:
     normal: np.array
     specular: np.array
     image: np.array
+    mask: np.array
 
     def __post_init__(self):
         assert self.uv.shape == self.diffuse.shape \
             and self.diffuse.shape == self.specular.shape \
             and self.specular.shape == self.normal.shape \
-            and self.normal.shape == self.image.shape
-        
+            and self.normal.shape == self.image.shape \
+            and self.image.shape == self.mask.shape
+
         # * The color buffer are in C,W,H format, the info buffers are in W,H,C format
         self.diffuse = self.diffuse.permute((2, 0, 1))
         self.specular = self.specular.permute((2, 0, 1))
         self.image = self.image.permute((2, 0, 1))
-        
+        self.mask = self.mask.permute((2, 0, 1))
+
         assert self.diffuse.shape[0] == 3
         assert self.specular.shape[0] == 3
         assert self.image.shape[0] == 3
+        assert self.mask.shape[0] == 3
         assert self.normal.shape[2] == 3
         assert self.uv.shape[2] == 3
-        
+
 
 @dataclass
 class FrameBufferLoader(torch.utils.data.Dataset):
     path: str
 
     subdirs = list(FrameBuffer.__annotations__.keys())
-    
+
     def __post_init__(self):
         def dir_len(d): return len(os.listdir(self.path + '/' + d))
         assert all([dir_len(d) == dir_len(self.subdirs[0]) for d in self.subdirs])
@@ -47,7 +51,7 @@ class FrameBufferLoader(torch.utils.data.Dataset):
         #                 for subdir in self.subdirs }
         # buffers = {subdir: open_16bit_png(f"{self.path}/{subdir}/{subdir}{i:04}.png")
         #            for subdir in self.subdirs}
-        buffers = {subdir: open_16bit_tif(f"{self.path}/{subdir}/{subdir}{i:04}.tif")
+        buffers = {subdir: open_16bit_png(f"{self.path}/{subdir}/{subdir}{i:04}.png")
                    for subdir in self.subdirs}
         return FrameBuffer(**buffers)
 
@@ -89,13 +93,13 @@ def open_16bit_png(path: str) -> torch.Tensor:
         image = np.vstack(list(map(np.uint16, data))) # TODO this is slow
         image = image.reshape((w, h, 3))
         image = torch.tensor(image.astype(np.float64) / 2**16).to(dtype=torch.float32)
-        
+
         # * Note that the alpha in the blue channel of the uvs
         assert len(image.shape) == 3
         assert image.min() >= 0.0
         assert image.max() <= 1.0
-        assert image.shape[0] == image.shape[1]
-        
+        # assert image.shape[0] == image.shape[1]
+
         return image
 
 
